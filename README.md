@@ -1,67 +1,33 @@
 # F1 Weekend Companion
 
-F1 Weekend Companion je Formula 1 second-screen aplikacija fokusirana na race weekend iskustvo, predikcije, live context i social competition.
+F1 Weekend Companion is a Formula 1 second-screen app focused on race weekend experiences, predictions, live context, and social competition.
 
 ## Overview
 
-Projekt je zamišljen kao companion app za F1 fanove koji žele više od samog gledanja utrke:
+The project is designed as a companion app for F1 fans who want more than just watching the race:
 
-- live informacije o vikendu i narednoj sesiji
-- predikcije za podium, fastest lap i race events
-- leaderboard i takmičenje s prijateljima
-- schedule i weather pregled na jednom mjestu
-- post-race summaries i ključni highlights
+- live weekend and next-session information
+- predictions for podium, fastest lap, and race events
+- leaderboards and competition with friends
+- schedule and weather in one place
+- post-race summaries and key highlights
 
 ## Tech Stack
 
 - Frontend: React, Vite, Tailwind CSS, Framer Motion, shadcn/ui
 - Backend: Node.js, Express
 
-## Project Structure
-
-```text
-F1WeekendCompanion/
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   └── package.json
-├── backend/
-│   ├── src/
-│   └── package.json
-└── package.json
-```
-
-## Getting Started
-
-1. Install dependencies
-
-```bash
-npm install
-```
-
-2. Start the frontend
-
-```bash
-npm run dev --workspace frontend
-```
-
-3. Start the backend
-
-```bash
-npm run dev --workspace backend
-```
-
 ## Planned Features
 
-- **Race Dashboard**: Countdown do naredne sesije, race info i venue detalji.
-- **Predictions**: Predikcije za podium, fastest lap i safety car scenarije.
-- **Leaderboard**: Rang lista i poređenje rezultata s prijateljima.
-- **Live Race View**: Praćenje dešavanja tokom utrke u realnom vremenu.
-- **Schedule & Weather**: Pregled kompletnog race weekend rasporeda uz vremensku prognozu.
-- **AI Summary**: Kratki post-race recap sa highlightovima i ključnim pomacima.
+- **Race Dashboard**: Countdown to the next session, race info, and venue details.
+- **Predictions**: Picks for podium, fastest lap, and safety car scenarios.
+- **Leaderboard**: Rankings and competition with friends.
+- **Live Race View**: Real-time race context and event tracking.
+- **Schedule & Weather**: Full race weekend schedule with weather data.
+- **AI Summary**: Short post-race recap with highlights and key movers.
 
 ## Notes
 
-- Frontend koristi Vite, React i Tailwind CSS.
-- Backend je postavljen kao minimalni Express API.
-- `shadcn/ui` setup je pripremljen tako da se komponente mogu dodavati bez dodatnog ručnog podešavanja.
+- The frontend uses Vite, React, and Tailwind CSS.
+- The backend starts as a minimal Express API.
+- `shadcn/ui` is prepared so components can be added cleanly without extra setup.
