@@ -7,7 +7,6 @@ import {
   Calendar,
   Trophy,
   Brain,
-  Radio,
   User,
   Flag,
   BarChart3,
@@ -16,6 +15,7 @@ import {
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import logo from "@/assets/FC.png";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: Flag },
@@ -23,7 +23,6 @@ const navItems = [
   { to: "/predictions", label: "Predictions", icon: BarChart3 },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/ai-summary", label: "AI Summary", icon: Brain },
-  { to: "/live", label: "Live", icon: Radio, isLive: true },
 ];
 
 const Navbar = () => {
@@ -41,14 +40,13 @@ const Navbar = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-nav">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <RouterNavLink to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center glow-red">
-            <Flag className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <span className="font-display text-lg tracking-tight">
-            F1 COMPANION
-          </span>
+      <div className="container mx-auto px-4 h-24 flex items-center justify-between">
+        <RouterNavLink to="/" className="flex items-center">
+          <img
+            src={logo}
+            alt="F1 Companion"
+            className="h-22 w-auto"
+          />
         </RouterNavLink>
 
         <div className="hidden lg:flex items-center gap-1">
