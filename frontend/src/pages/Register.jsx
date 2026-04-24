@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { Flag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import logo from '@/assets/FC.png';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -51,10 +51,7 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center gap-2 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center glow-red mb-2">
-            <Flag className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <h1 className="font-display text-2xl tracking-tight">F1 COMPANION</h1>
+          <img src={logo} alt="F1 Companion" className="h-28 w-auto" />
           <p className="text-muted-foreground text-sm">Create your account</p>
         </div>
 
