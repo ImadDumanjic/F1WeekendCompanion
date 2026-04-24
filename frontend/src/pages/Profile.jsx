@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Mail, Lock, Save, FileText } from 'lucide-react';
-import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 
@@ -116,8 +115,7 @@ const Profile = () => {
   }
 
   return (
-    <Layout>
-      <div className="container mx-auto max-w-lg px-4 py-8">
+    <div className="container mx-auto max-w-lg px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -164,8 +162,7 @@ const Profile = () => {
             </form>
           )}
         </motion.div>
-      </div>
-    </Layout>
+    </div>
   );
 };
 

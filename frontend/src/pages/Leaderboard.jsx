@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { Trophy, Target, User } from "lucide-react";
-import Layout from "@/components/Layout";
 
 const leaderboardData = [
   { rank: 1, name: "SpeedDemon_42", points: 2840, accuracy: 78 },
@@ -29,8 +28,7 @@ const getRankStyle = (rank) => {
 
 const Leaderboard = () => {
   return (
-    <Layout>
-      <div className="container mx-auto max-w-2xl px-4 py-8">
+    <div className="container mx-auto max-w-2xl px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -92,8 +90,7 @@ const Leaderboard = () => {
             ))}
           </div>
         </motion.div>
-      </div>
-    </Layout>
+    </div>
   );
 };
 
