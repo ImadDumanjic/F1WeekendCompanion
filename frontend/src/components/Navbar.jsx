@@ -11,6 +11,7 @@ import {
   Flag,
   BarChart3,
   LogOut,
+  Heart,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -21,6 +22,7 @@ const navItems = [
   { to: "/", label: "Dashboard", icon: Flag },
   { to: "/schedule", label: "Schedule", icon: Calendar },
   { to: "/predictions", label: "Predictions", icon: BarChart3 },
+  { to: "/select-driver", label: "Favourites", icon: Heart },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/ai-summary", label: "AI Summary", icon: Brain },
 ];

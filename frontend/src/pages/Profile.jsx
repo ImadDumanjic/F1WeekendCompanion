@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { getFavoriteDriver, getFavoriteTeam } from '@/lib/favorites';
 
 const API = 'http://localhost:3001/api';
 
@@ -35,15 +36,6 @@ function formatDateTime(value) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date);
-}
-
-function getFavoriteDriver() {
-  try {
-    const stored = localStorage.getItem('favoriteDriver');
-    return stored ? JSON.parse(stored) : null;
-  } catch {
-    return null;
-  }
 }
 
 const Field = ({ label, icon: Icon, type = 'text', value, onChange, placeholder }) => (
@@ -108,6 +100,7 @@ const Profile = () => {
     passwordChangedAt: null,
   });
   const [favoriteDriver, setFavoriteDriver] = useState(null);
+  const [favoriteTeam, setFavoriteTeam] = useState(null);
 
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');
@@ -122,6 +115,7 @@ const Profile = () => {
 
   useEffect(() => {
     setFavoriteDriver(getFavoriteDriver());
+    setFavoriteTeam(getFavoriteTeam());
 
     fetch(`${API}/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -280,7 +274,7 @@ const Profile = () => {
                 </h2>
                 <div className="flex flex-col gap-2.5">
                   <PickRow title={favoriteDriver?.name} subtitle={favoriteDriver?.team} badge="Driver" />
-                  <PickRow title={favoriteDriver?.team} subtitle={favoriteDriver?.team ? 'Team' : EMPTY} badge="Team" />
+                  <PickRow title={favoriteTeam?.name} subtitle={favoriteTeam?.nationality} badge="Team" />
                 </div>
               </Panel>
 

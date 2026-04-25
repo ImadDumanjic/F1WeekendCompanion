@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from 'react';
+import { clearFavorites } from '@/lib/favorites';
 
 const AuthContext = createContext(null);
 
@@ -62,7 +63,7 @@ export function AuthProvider({ children }) {
 
   function logout() {
     clearStoredAuth();
-    localStorage.removeItem('favoriteDriver');
+    clearFavorites();
     setToken(null);
     setUser(null);
   }
