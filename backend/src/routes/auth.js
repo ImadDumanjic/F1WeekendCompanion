@@ -13,11 +13,11 @@ const LIMITS = {
   email: 255,
 };
 
-function signToken(user) {
+function signToken(user, rememberMe = false) {
   return jwt.sign(
     { id: user.id, username: user.username, email: user.email },
     process.env.JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: rememberMe ? '30d' : '2h' }
   );
 }
 
@@ -52,12 +52,12 @@ router.post('/register', async (req, res, next) => {
     const { rows } = await pool.query(
       `INSERT INTO users (username, name, email, password_hash)
        VALUES ($1, $1, $2, $3)
-       RETURNING id, username, email`,
+       RETURNING id, username, email, remember_me`,
       [username, email, passwordHash]
     );
 
     const user = rows[0];
-    res.status(201).json({ token: signToken(user), user });
+    res.status(201).json({ token: signToken(user, false), user });
   } catch (err) {
     next(err);
   }
@@ -65,7 +65,7 @@ router.post('/register', async (req, res, next) => {
 
 router.post('/login', async (req, res, next) => {
   try {
-    const { email, password } = req.body ?? {};
+    const { email, password, rememberMe = false } = req.body ?? {};
 
     if (!email || !password) {
       return res.status(400).json({ error: 'All fields are required' });
@@ -73,9 +73,12 @@ router.post('/login', async (req, res, next) => {
     if (typeof password !== 'string' || password.length > LIMITS.password.max) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+    if (typeof rememberMe !== 'boolean') {
+      return res.status(400).json({ error: 'Remember me must be a boolean' });
+    }
 
     const { rows } = await pool.query(
-      'SELECT id, username, email, password_hash FROM users WHERE email = $1',
+      'SELECT id, username, email, password_hash, remember_me FROM users WHERE email = $1',
       [email]
     );
     if (rows.length === 0) {
@@ -88,8 +91,16 @@ router.post('/login', async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const { password_hash: _, ...safeUser } = user;
-    res.json({ token: signToken(safeUser), user: safeUser });
+    const updateResult = await pool.query(
+      `UPDATE users
+       SET remember_me = $1
+       WHERE id = $2
+       RETURNING id, username, email, remember_me`,
+      [rememberMe, user.id]
+    );
+
+    const safeUser = updateResult.rows[0];
+    res.json({ token: signToken(safeUser, rememberMe), user: safeUser });
   } catch (err) {
     next(err);
   }
