@@ -3,6 +3,8 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import logo from '@/assets/FC.png';
+import wallpaper from '@/assets/FCWallpaper.png';
+import { Mail, Lock, User } from 'lucide-react';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -48,14 +50,40 @@ export default function Register() {
   const displayError = error || validationError;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="flex flex-col items-center gap-2 mb-8">
-          <img src={logo} alt="F1 Companion" className="h-28 w-auto" />
-          <p className="text-muted-foreground text-sm">Create your account</p>
+    <div
+      className="relative grid min-h-screen min-h-dvh place-items-center px-4 py-8"
+      style={{
+        backgroundImage: `url(${wallpaper})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.78) 60%, rgba(120,10,10,0.45) 100%)' }}
+      />
+
+      <div className="relative z-10 mx-auto w-full max-w-md">
+        <div className="flex flex-col items-center gap-1 mb-8">
+          <img src={logo} alt="FC Racing" className="h-40 w-auto" />
+          <div className="flex items-center gap-3">
+            <span className="block h-px w-8 bg-primary" />
+            <p className="font-display text-sm font-bold tracking-[0.3em] uppercase text-muted-foreground">Driver Portal</p>
+            <span className="block h-px w-8 bg-primary" />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="glass-card p-8 flex flex-col gap-4">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-5 rounded-2xl border-t-2 border-t-primary p-8 glow-red backdrop-blur-xl"
+          style={{ background: 'rgba(8, 8, 12, 0.72)', border: '1px solid rgba(255,255,255,0.07)', borderTopColor: 'hsl(1 100% 44%)' }}
+        >
+          <div className="flex flex-col gap-1">
+            <h1 className="font-display text-2xl font-bold tracking-widest uppercase text-foreground">Create Account</h1>
+            <p className="text-xs text-muted-foreground">Enter your details to join the grid</p>
+          </div>
+
           {displayError && (
             <div className="px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm">
               {displayError}
@@ -63,47 +91,69 @@ export default function Register() {
           )}
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-muted-foreground">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              placeholder="verstappen1"
-              className="w-full px-4 py-3 rounded-xl bg-muted border border-glass-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground transition-colors"
-            />
+            <label className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">Username</label>
+            <div
+              className="relative flex items-center rounded-xl ring-1 ring-white/10 transition-all focus-within:ring-2 focus-within:ring-primary"
+              style={{ background: 'rgba(0,0,0,0.6)' }}
+            >
+              <User className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                autoComplete="username"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder="verstappen1"
+                className="auth-input w-full pl-10 pr-4 py-3 rounded-xl bg-transparent border-0 outline-none ring-0 text-white placeholder:text-muted-foreground text-sm"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-muted-foreground">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="w-full px-4 py-3 rounded-xl bg-muted border border-glass-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground transition-colors"
-            />
+            <label className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">Email</label>
+            <div
+              className="relative flex items-center rounded-xl ring-1 ring-white/10 transition-all focus-within:ring-2 focus-within:ring-primary"
+              style={{ background: 'rgba(0,0,0,0.6)' }}
+            >
+              <Mail className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                inputMode="email"
+                autoComplete="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="auth-input w-full pl-10 pr-4 py-3 rounded-xl bg-transparent border-0 outline-none ring-0 text-white placeholder:text-muted-foreground text-sm"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-muted-foreground">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-xl bg-muted border border-glass-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground transition-colors"
-            />
+            <label className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">Password</label>
+            <div
+              className="relative flex items-center rounded-xl ring-1 ring-white/10 transition-all focus-within:ring-2 focus-within:ring-primary"
+              style={{ background: 'rgba(0,0,0,0.6)' }}
+            >
+              <Lock className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="auth-input w-full pl-10 pr-4 py-3 rounded-xl bg-transparent border-0 outline-none ring-0 text-white placeholder:text-muted-foreground text-sm"
+              />
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={isDisabled}
-            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed mt-2"
+            className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-display font-bold tracking-[0.2em] uppercase text-base hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 glow-red"
           >
-            {loading ? 'Creating account…' : 'Sign Up'}
+            {loading ? 'Creating account…' : 'Join Grid →'}
           </button>
 
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-xs text-muted-foreground">
             Already have an account?{' '}
             <Link to="/login" className="text-primary font-medium hover:underline">
               Sign in
