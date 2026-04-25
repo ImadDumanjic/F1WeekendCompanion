@@ -50,9 +50,9 @@ router.post('/register', async (req, res, next) => {
 
     const passwordHash = await bcrypt.hash(password, 12);
     const { rows } = await pool.query(
-      `INSERT INTO users (username, name, email, password_hash)
-       VALUES ($1, $1, $2, $3)
-       RETURNING id, username, email, remember_me`,
+      `INSERT INTO users (username, name, email, password_hash, last_login_at, password_changed_at)
+       VALUES ($1, $1, $2, $3, NOW(), NOW())
+       RETURNING id, username, email, remember_me, last_login_at, password_changed_at`,
       [username, email, passwordHash]
     );
 
@@ -93,9 +93,10 @@ router.post('/login', async (req, res, next) => {
 
     const updateResult = await pool.query(
       `UPDATE users
-       SET remember_me = $1
+       SET remember_me = $1,
+           last_login_at = NOW()
        WHERE id = $2
-       RETURNING id, username, email, remember_me`,
+       RETURNING id, username, email, remember_me, last_login_at, password_changed_at`,
       [rememberMe, user.id]
     );
 

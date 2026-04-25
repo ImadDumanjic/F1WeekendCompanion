@@ -42,6 +42,8 @@ CREATE TABLE users (
     email              VARCHAR(255) NOT NULL UNIQUE,
     password_hash      VARCHAR(255) NOT NULL,
     remember_me        BOOLEAN      NOT NULL DEFAULT FALSE,
+    last_login_at      TIMESTAMPTZ,
+    password_changed_at TIMESTAMPTZ,
     phone_number       VARCHAR(20),
     score              INT          NOT NULL DEFAULT 0 CHECK (score >= 0),
     favorite_driver_id INT          REFERENCES drivers(id) ON DELETE SET NULL ON UPDATE CASCADE

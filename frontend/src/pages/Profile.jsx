@@ -25,6 +25,18 @@ function displayValue(value) {
   return value;
 }
 
+function formatDateTime(value) {
+  if (!value) return EMPTY;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return EMPTY;
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date);
+}
+
 function getFavoriteDriver() {
   try {
     const stored = localStorage.getItem('favoriteDriver');
@@ -87,7 +99,14 @@ const Profile = () => {
   const { token, updateUser } = useAuth();
   const { addToast } = useToast();
 
-  const [original, setOriginal] = useState({ username: '', name: '', email: '', score: null });
+  const [original, setOriginal] = useState({
+    username: '',
+    name: '',
+    email: '',
+    score: null,
+    lastLoginAt: null,
+    passwordChangedAt: null,
+  });
   const [favoriteDriver, setFavoriteDriver] = useState(null);
 
   const [username, setUsername] = useState('');
@@ -114,6 +133,8 @@ const Profile = () => {
           name: data.name ?? '',
           email: data.email ?? '',
           score: data.score ?? null,
+          lastLoginAt: data.last_login_at ?? null,
+          passwordChangedAt: data.password_changed_at ?? null,
         };
         setOriginal(values);
         setUsername(values.username);
@@ -181,9 +202,17 @@ const Profile = () => {
         name: data.name ?? '',
         email: data.email ?? '',
         score: data.score ?? original.score,
+        lastLoginAt: data.last_login_at ?? original.lastLoginAt,
+        passwordChangedAt: data.password_changed_at ?? original.passwordChangedAt,
       };
       setOriginal(updated);
-      updateUser({ username: updated.username, name: updated.name, email: updated.email });
+      updateUser({
+        username: updated.username,
+        name: updated.name,
+        email: updated.email,
+        last_login_at: updated.lastLoginAt,
+        password_changed_at: updated.passwordChangedAt,
+      });
       setNewPassword('');
       setConfirmPassword('');
       setPasswordOpen(false);
@@ -292,7 +321,12 @@ const Profile = () => {
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-foreground">Password &amp; security</h3>
-                      <p className="mt-0.5 text-xs text-muted-foreground">Last changed -</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Password changed {formatDateTime(original.passwordChangedAt)}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Last logged in {formatDateTime(original.lastLoginAt)}
+                      </p>
                     </div>
                   </div>
                   <button

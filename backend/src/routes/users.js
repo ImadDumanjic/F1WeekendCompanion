@@ -17,7 +17,7 @@ const LIMITS = {
 router.get('/me', requireAuth, async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      'SELECT id, username, name, email, score, remember_me FROM users WHERE id = $1',
+      'SELECT id, username, name, email, score, remember_me, last_login_at, password_changed_at FROM users WHERE id = $1',
       [req.user.id]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
@@ -75,13 +75,14 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (newPassword)            {
       sets.push(`password_hash = $${i++}`);
       values.push(await bcrypt.hash(newPassword, 12));
+      sets.push('password_changed_at = NOW()');
     }
 
     if (sets.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
     values.push(userId);
     const { rows } = await pool.query(
-      `UPDATE users SET ${sets.join(', ')} WHERE id = $${i} RETURNING id, username, name, email, score, remember_me`,
+      `UPDATE users SET ${sets.join(', ')} WHERE id = $${i} RETURNING id, username, name, email, score, remember_me, last_login_at, password_changed_at`,
       values
     );
 
