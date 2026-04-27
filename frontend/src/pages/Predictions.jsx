@@ -161,17 +161,18 @@ const DriverDropdown = ({ value, onChange, drivers, excluded, disabled }) => {
 const DriverSelect = ({ label, position, value, onChange, drivers, excluded, disabled }) => {
   const selectedDriver = value ? (drivers.find((d) => d.code === value) ?? null) : null;
   const initials = selectedDriver?.code ?? null;
+  const podiumRingClass = selectedDriver
+    ? {
+        1: "border-amber-300 bg-amber-300/20 text-amber-100 shadow-[0_0_20px_rgb(252_211_77_/_0.35),0_0_60px_rgb(252_211_77_/_0.12)]",
+        2: "border-slate-200 bg-slate-200/20 text-slate-100 shadow-[0_0_20px_rgb(226_232_240_/_0.3),0_0_60px_rgb(226_232_240_/_0.1)]",
+        3: "border-orange-400 bg-orange-500/20 text-orange-100 shadow-[0_0_20px_rgb(251_146_60_/_0.32),0_0_60px_rgb(251_146_60_/_0.1)]",
+      }[position]
+    : "border-muted-foreground/20 bg-muted text-foreground";
 
   return (
     <div className="flex flex-col items-center gap-3">
       <div
-        className={`flex h-16 w-16 items-center justify-center rounded-full sm:h-20 sm:w-20 ${
-          position === "1"
-            ? "border-2 border-primary bg-primary/20 glow-red"
-            : position === "2"
-              ? "border-2 border-muted-foreground/30 bg-muted"
-              : "border-2 border-muted-foreground/20 bg-muted"
-        }`}
+        className={`flex h-16 w-16 items-center justify-center rounded-full border-2 transition-all duration-200 sm:h-20 sm:w-20 ${podiumRingClass}`}
       >
         <span className="font-display text-xl font-bold">{initials ?? position}</span>
       </div>
