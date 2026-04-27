@@ -4,6 +4,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
+import predictionsRouter from './routes/predictions.js';
+import racesRouter from './routes/races.js';
 
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET environment variable is not set.');
@@ -27,6 +29,8 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/predictions', predictionsRouter);
+app.use('/api/races', racesRouter);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

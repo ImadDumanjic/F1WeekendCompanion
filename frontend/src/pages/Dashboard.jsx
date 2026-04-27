@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { COUNTRY_FLAGS, getRaceDateTime, formatDateRangeLong } from "@/lib/f1-data";
+import { useAuth } from "@/context/AuthContext";
 
 const useCountdown = (targetMs) => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -50,9 +51,12 @@ const CountdownBlock = ({ value, label, valueClassName = "" }) => (
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user, refreshUser } = useAuth();
   const [nextRace, setNextRace]     = useState(null);
   const [seasonOver, setSeasonOver] = useState(false);
   const [loading, setLoading]       = useState(true);
+
+  useEffect(() => { refreshUser(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetch("https://f1api.dev/api/2026")
@@ -80,8 +84,8 @@ const Dashboard = () => {
   const dateRange = nextRace ? formatDateRangeLong(nextRace.schedule) : "";
 
   const circuitStats = c ? [
-    c.numberOfLaps            && { icon: Timer, label: `${c.numberOfLaps} Laps`,     sublabel: "Race Distance", iconClassName: "text-secondary" },
-    c.circuitLength           && { icon: Ruler, label: `${c.circuitLength} km`,      sublabel: "Track Length",  iconClassName: "text-primary"   },
+    c.numberOfLaps            && { icon: Timer, label: `${c.numberOfLaps} Laps`,                    sublabel: "Race Distance", iconClassName: "text-secondary" },
+    c.circuitLength           && { icon: Ruler, label: `${Math.round(parseFloat(c.circuitLength))} km`, sublabel: "Track Length",  iconClassName: "text-primary"   },
     c.firstParticipationYear  && { icon: Flag,  label: `${c.firstParticipationYear}`, sublabel: "First GP",      iconClassName: "text-primary"   },
   ].filter(Boolean) : [];
 
@@ -214,19 +218,22 @@ const Dashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.45 }}
-          className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4"
         >
-          {[
-            { title: "Your Rank",           value: "#12",   sub: "of 1,847 players", color: "text-secondary"    },
-            { title: "Prediction Accuracy", value: "68%",   sub: "Last 5 races",      color: "text-podium-green" },
-            { title: "Points This Season",  value: "1,250", sub: "+180 last race",    color: "text-primary"      },
-          ].map((stat, i) => (
-            <div key={i} className="glass-card p-6 hover-lift">
-              <div className="text-sm text-muted-foreground mb-1">{stat.title}</div>
-              <div className={`font-display text-3xl ${stat.color}`}>{stat.value}</div>
-              <div className="text-xs text-muted-foreground mt-1">{stat.sub}</div>
+          <div className="glass-card p-6 hover-lift">
+            <div className="text-sm text-muted-foreground mb-1">Points This Season</div>
+            <div className="font-display text-3xl text-primary">
+              {(user?.score ?? 0).toLocaleString()}
             </div>
-          ))}
+            <div className="text-xs text-muted-foreground mt-1">Total accumulated score</div>
+          </div>
+          <div className="glass-card p-6 hover-lift">
+            <div className="text-sm text-muted-foreground mb-1">Make Your Pick</div>
+            <div className="font-display text-3xl text-secondary">
+              {nextRace ? (nextRace.raceName ?? "Next Race") : "—"}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">Predictions open now</div>
+          </div>
         </motion.section>
 
     </div>

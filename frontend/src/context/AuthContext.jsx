@@ -61,6 +61,21 @@ export function AuthProvider({ children }) {
     setUser(merged);
   }
 
+  async function refreshUser(currentToken) {
+    const t = currentToken ?? token;
+    if (!t) return;
+    try {
+      const res = await fetch(`${API}/users/me`, {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (!res.ok) return;
+      const fresh = await res.json();
+      updateUser(fresh);
+    } catch {
+      // silently ignore network errors
+    }
+  }
+
   function logout() {
     clearStoredAuth();
     clearFavorites();
@@ -69,7 +84,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

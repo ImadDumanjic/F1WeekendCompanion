@@ -81,7 +81,7 @@ const Navbar = () => {
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted">
             <Trophy className="w-4 h-4 text-podium-green" />
-            <span className="text-sm font-semibold">1,250 pts</span>
+            <span className="text-sm font-semibold">{(user?.score ?? 0).toLocaleString()} pts</span>
           </div>
           <RouterNavLink
             to="/profile"
