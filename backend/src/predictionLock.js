@@ -1,4 +1,4 @@
-import pool from './db.js';
+import { fetchRaceFromScheduleApi, normalizeApiRace } from './f1Schedule.js';
 
 export function normalizeRaceKey(input = {}) {
   const raceId = input.raceId ?? input.race_id ?? input.id;
@@ -33,26 +33,9 @@ export function raceLockPayload(race) {
   };
 }
 
-export async function loadRaceForPrediction({ raceId, raceYear, raceRound }, db = pool) {
-  if (raceId) {
-    const { rows } = await db.query(
-      `SELECT id, race_year, race_round, gp_name, qualifying_start_at
-       FROM races
-       WHERE id = $1`,
-      [raceId]
-    );
-    return rows[0] ?? null;
-  }
-
+export async function loadRaceForPrediction({ raceId, raceYear, raceRound }) {
   if (!raceYear || !raceRound) return null;
-
-  const { rows } = await db.query(
-    `SELECT id, race_year, race_round, gp_name, qualifying_start_at
-     FROM races
-     WHERE race_year = $1 AND race_round = $2`,
-    [raceYear, raceRound]
-  );
-  return rows[0] ?? null;
+  return fetchRaceFromScheduleApi({ raceId, raceYear, raceRound });
 }
 
 export function createRequirePredictionsOpen({ loadRace = loadRaceForPrediction, now = () => new Date() } = {}) {
@@ -64,7 +47,8 @@ export function createRequirePredictionsOpen({ loadRace = loadRaceForPrediction,
         return res.status(400).json({ error: 'race_id or race_year and race_round are required' });
       }
 
-      const race = await loadRace(raceKey);
+      const race = await loadRace(raceKey)
+        ?? normalizeApiRace(req.body?.race, raceKey.raceYear, raceKey.raceRound);
       if (!race) return res.status(404).json({ error: 'Race not found' });
 
       if (isPredictionLocked(race, now())) {

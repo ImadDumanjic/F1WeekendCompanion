@@ -37,6 +37,13 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(port, () => {
+const server = app.listen(port);
+
+server.on('listening', () => {
   console.log(`Backend listening on http://localhost:${port}`);
+});
+
+server.on('error', (err) => {
+  console.error('Backend failed to start:', err.message);
+  process.exit(1);
 });

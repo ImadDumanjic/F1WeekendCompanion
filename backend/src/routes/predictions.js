@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import pool from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
-import { requirePredictionsOpen } from '../predictionLock.js';
+import { isPredictionLocked, requirePredictionsOpen } from '../predictionLock.js';
 
 const router = Router();
 
@@ -50,27 +50,12 @@ router.post('/', requireAuth, requirePredictionsOpen, async (req, res, next) => 
     try {
       await client.query('BEGIN');
 
-      const { rows: lockedRace } = await client.query(
-        `SELECT id,
-                qualifying_start_at,
-                qualifying_start_at IS NOT NULL AND clock_timestamp() >= qualifying_start_at AS is_locked
-         FROM races
-         WHERE id = $1
-         FOR UPDATE`,
-        [req.race.id]
-      );
-
-      if (lockedRace.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'Race not found' });
-      }
-
-      if (lockedRace[0].is_locked) {
+      if (isPredictionLocked(req.race)) {
         await client.query('ROLLBACK');
         return res.status(403).json({
           error: 'PREDICTIONS_LOCKED',
           message: 'Predictions are locked because qualifying has started for this race.',
-          qualifyingStartAt: new Date(lockedRace[0].qualifying_start_at).toISOString(),
+          qualifyingStartAt: new Date(req.race.qualifying_start_at).toISOString(),
         });
       }
 

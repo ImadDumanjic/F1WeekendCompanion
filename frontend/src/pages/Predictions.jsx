@@ -287,6 +287,7 @@ const Predictions = () => {
         body: JSON.stringify({
           race_year: RACE_YEAR,
           race_round: raceRound,
+          race: nextRace,
           p1, p2, p3,
           fastest_lap: fastestLap,
           safety_car_count: safetyCar,
