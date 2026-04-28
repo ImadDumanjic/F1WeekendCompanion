@@ -36,17 +36,22 @@ CREATE INDEX idx_users_favorite_driver_id ON users(favorite_driver_id);
 
 CREATE TABLE races (
     id                       SERIAL        PRIMARY KEY,
+    race_year                SMALLINT,
+    race_round               SMALLINT,
     gp_name                  VARCHAR(100)  NOT NULL,
     circuit_name             VARCHAR(150)  NOT NULL,
     country                  VARCHAR(100)  NOT NULL,
     length                   DECIMAL(6, 3) NOT NULL CHECK (length > 0),
     laps                     SMALLINT      NOT NULL CHECK (laps > 0),
+    qualifying_start_at      TIMESTAMPTZ,
     status                   race_status   NOT NULL DEFAULT 'scheduled',
     summary                  TEXT,
     is_removed_from_calendar BOOLEAN       NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX idx_races_status ON races(status);
+CREATE UNIQUE INDEX idx_races_year_round ON races(race_year, race_round)
+    WHERE race_year IS NOT NULL AND race_round IS NOT NULL;
 
 CREATE TABLE sessions (
     id         SERIAL         PRIMARY KEY,

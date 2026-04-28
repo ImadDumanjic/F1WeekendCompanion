@@ -1,7 +1,38 @@
 import { Router } from 'express';
 import pool from '../db.js';
+import { loadRaceForPrediction, normalizeRaceKey, raceLockPayload } from '../predictionLock.js';
 
 const router = Router();
+
+router.get('/prediction-status', async (req, res, next) => {
+  try {
+    const raceKey = normalizeRaceKey(req.query);
+    if (!raceKey.raceYear || !raceKey.raceRound) {
+      return res.status(400).json({ error: 'year and round are required' });
+    }
+
+    const race = await loadRaceForPrediction(raceKey);
+    if (!race) return res.status(404).json({ error: 'Race not found' });
+
+    res.json(raceLockPayload(race));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/:id/prediction-status', async (req, res, next) => {
+  try {
+    const raceId = Number(req.params.id);
+    if (!raceId) return res.status(400).json({ error: 'Valid race id is required' });
+
+    const race = await loadRaceForPrediction({ raceId });
+    if (!race) return res.status(404).json({ error: 'Race not found' });
+
+    res.json(raceLockPayload(race));
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.get('/results', async (req, res, next) => {
   try {
