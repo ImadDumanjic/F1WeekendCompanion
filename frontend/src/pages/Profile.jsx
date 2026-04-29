@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
+  Eye,
+  EyeOff,
   Flag,
   IdCard,
   Lock,
@@ -38,21 +40,39 @@ function formatDateTime(value) {
   }).format(date);
 }
 
-const Field = ({ label, icon: Icon, type = 'text', value, onChange, placeholder }) => (
-  <label className="flex flex-col gap-1.5">
-    <span className="flex items-center gap-2 font-display text-[0.7rem] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-      <Icon className="h-3.5 w-3.5" />
-      {label}
-    </span>
-    <input
-      type={type}
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="w-full rounded-xl border border-glass-border bg-muted/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-    />
-  </label>
-);
+const Field = ({ label, icon: Icon, type = 'text', value, onChange, placeholder, maxLength }) => {
+  const [show, setShow] = useState(false);
+  const isPassword = type === 'password';
+
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="flex items-center gap-2 font-display text-[0.7rem] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </span>
+      <div className="relative">
+        <input
+          type={isPassword && show ? 'text' : type}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          className={`w-full rounded-xl border border-glass-border bg-muted/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary${isPassword ? ' pr-10' : ''}`}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShow(s => !s)}
+            tabIndex={-1}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        )}
+      </div>
+    </label>
+  );
+};
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-2xl border border-glass-border bg-card/60 shadow-[0_0_28px_rgba(225,6,0,0.045)] backdrop-blur-xl ${className}`}>
@@ -141,6 +161,8 @@ const Profile = () => {
 
   function getValidationError() {
     if (!username.trim()) return 'Username is required';
+    if (username.length > 50) return 'Username must be at most 50 characters';
+    if (name.length > 100) return 'Full name must be at most 100 characters';
     if (!email.trim()) return 'Email is required';
     if (!EMAIL_RE.test(email)) return 'Invalid email format';
     if (newPassword && newPassword.length < 8) return 'New password must be at least 8 characters';
@@ -300,8 +322,8 @@ const Profile = () => {
               )}
 
               <div className="mt-5 grid gap-4 md:grid-cols-2">
-                <Field label="Username" icon={User} value={username} onChange={setUsername} placeholder={EMPTY} />
-                <Field label="Full Name" icon={IdCard} value={name} onChange={setName} placeholder={EMPTY} />
+                <Field label="Username" icon={User} value={username} onChange={setUsername} placeholder={EMPTY} maxLength={50} />
+                <Field label="Full Name" icon={IdCard} value={name} onChange={setName} placeholder={EMPTY} maxLength={100} />
                 <div className="md:col-span-2">
                   <Field label="Email" icon={Mail} type="email" value={email} onChange={setEmail} placeholder={EMPTY} />
                 </div>

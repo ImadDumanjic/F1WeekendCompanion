@@ -17,7 +17,7 @@ const LIMITS = {
 router.get('/me', requireAuth, async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      'SELECT id, username, name, email, score, remember_me, last_login_at, password_changed_at FROM users WHERE id = $1',
+      'SELECT id, username, name, email, score, remember_me, last_login_at, password_changed_at, favorite_driver, favorite_team FROM users WHERE id = $1',
       [req.user.id]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
@@ -29,17 +29,27 @@ router.get('/me', requireAuth, async (req, res, next) => {
 
 router.patch('/me', requireAuth, async (req, res, next) => {
   try {
-    const { username, name, email, newPassword } = req.body ?? {};
+    const { username, name, email, newPassword, favorite_driver, favorite_team } = req.body ?? {};
     const userId = req.user.id;
 
-    if (username !== undefined && username.length > LIMITS.username) {
-      return res.status(400).json({ error: `Username must be at most ${LIMITS.username} characters` });
+    if (username !== undefined) {
+      if (typeof username !== 'string' || !username.trim()) {
+        return res.status(400).json({ error: 'Username must be a non-empty string' });
+      }
+      if (username.length > LIMITS.username) {
+        return res.status(400).json({ error: `Username must be at most ${LIMITS.username} characters` });
+      }
     }
-    if (name !== undefined && name.length > LIMITS.name) {
-      return res.status(400).json({ error: `Name must be at most ${LIMITS.name} characters` });
+    if (name !== undefined) {
+      if (typeof name !== 'string') {
+        return res.status(400).json({ error: 'Name must be a string' });
+      }
+      if (name.length > LIMITS.name) {
+        return res.status(400).json({ error: `Name must be at most ${LIMITS.name} characters` });
+      }
     }
     if (email !== undefined) {
-      if (!EMAIL_RE.test(email) || email.length > LIMITS.email) {
+      if (typeof email !== 'string' || !EMAIL_RE.test(email) || email.length > LIMITS.email) {
         return res.status(400).json({ error: 'Invalid email format' });
       }
     }
@@ -77,12 +87,14 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       values.push(await bcrypt.hash(newPassword, 12));
       sets.push('password_changed_at = NOW()');
     }
+    if (favorite_driver !== undefined) { sets.push(`favorite_driver = $${i++}`); values.push(favorite_driver === null ? null : JSON.stringify(favorite_driver)); }
+    if (favorite_team !== undefined)   { sets.push(`favorite_team = $${i++}`);   values.push(favorite_team === null ? null : JSON.stringify(favorite_team)); }
 
     if (sets.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
     values.push(userId);
     const { rows } = await pool.query(
-      `UPDATE users SET ${sets.join(', ')} WHERE id = $${i} RETURNING id, username, name, email, score, remember_me, last_login_at, password_changed_at`,
+      `UPDATE users SET ${sets.join(', ')} WHERE id = $${i} RETURNING id, username, name, email, score, remember_me, last_login_at, password_changed_at, favorite_driver, favorite_team`,
       values
     );
 

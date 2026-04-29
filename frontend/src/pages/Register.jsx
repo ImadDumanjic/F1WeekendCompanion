@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import logo from '@/assets/FC.png';
 import wallpaper from '@/assets/FCWallpaper.png';
-import { Mail, Lock, User } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -16,6 +16,7 @@ export default function Register() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -135,13 +136,21 @@ export default function Register() {
             >
               <Lock className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="auth-input w-full pl-10 pr-4 py-3 rounded-xl bg-transparent border-0 outline-none ring-0 text-white placeholder:text-muted-foreground text-sm"
+                className="auth-input w-full pl-10 pr-10 py-3 rounded-xl bg-transparent border-0 outline-none ring-0 text-white placeholder:text-muted-foreground text-sm"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(s => !s)}
+                tabIndex={-1}
+                className="absolute right-3 text-muted-foreground hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
 

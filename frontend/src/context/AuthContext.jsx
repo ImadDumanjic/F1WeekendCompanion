@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from 'react';
-import { clearFavorites } from '@/lib/favorites';
+import { clearFavorites, setFavoriteDriver, setFavoriteTeam } from '@/lib/favorites';
 
 const AuthContext = createContext(null);
 
@@ -30,6 +30,8 @@ export function AuthProvider({ children }) {
     storage.setItem('user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
+    if (newUser?.favorite_driver) setFavoriteDriver(newUser.favorite_driver);
+    if (newUser?.favorite_team) setFavoriteTeam(newUser.favorite_team);
   }
 
   async function login(email, password, rememberMe = false) {

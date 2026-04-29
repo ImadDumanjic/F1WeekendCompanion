@@ -52,7 +52,7 @@ router.post('/register', async (req, res, next) => {
     const { rows } = await pool.query(
       `INSERT INTO users (username, name, email, password_hash, last_login_at, password_changed_at)
        VALUES ($1, $1, $2, $3, NOW(), NOW())
-       RETURNING id, username, email, remember_me, last_login_at, password_changed_at`,
+       RETURNING id, username, email, remember_me, last_login_at, password_changed_at, favorite_driver, favorite_team`,
       [username, email, passwordHash]
     );
 
@@ -96,7 +96,7 @@ router.post('/login', async (req, res, next) => {
        SET remember_me = $1,
            last_login_at = NOW()
        WHERE id = $2
-       RETURNING id, username, email, remember_me, last_login_at, password_changed_at`,
+       RETURNING id, username, email, remember_me, last_login_at, password_changed_at, favorite_driver, favorite_team`,
       [rememberMe, user.id]
     );
 

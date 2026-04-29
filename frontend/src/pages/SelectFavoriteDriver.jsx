@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Heart, Loader2, RefreshCw } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import {
   getCurrentConstructorStandings,
@@ -12,6 +13,8 @@ import {
   setFavoriteDriver,
   setFavoriteTeam,
 } from '@/lib/favorites';
+
+const API = 'http://localhost:3001/api';
 
 const TABS = {
   drivers: 'drivers',
@@ -168,6 +171,7 @@ const StandingCard = ({ item, type, isFavorite, onFavorite }) => {
 
 export default function SelectFavoriteDriver() {
   const navigate = useNavigate();
+  const { token } = useAuth();
   const { addToast } = useToast();
 
   const [activeTab, setActiveTab] = useState(TABS.drivers);
@@ -200,15 +204,32 @@ export default function SelectFavoriteDriver() {
     loadStandings();
   }, []);
 
+  async function saveFavoriteToBackend(field, value) {
+    try {
+      await fetch(`${API}/users/me`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ [field]: value }),
+      });
+    } catch {
+      // localStorage already updated — backend sync is best-effort
+    }
+  }
+
   function handleDriverFavorite(driver) {
     setFavoriteDriver(driver);
     setFavoriteDriverState(driver);
+    saveFavoriteToBackend('favorite_driver', driver);
     addToast(`${driver.name} set as your favourite driver.`);
   }
 
   function handleTeamFavorite(team) {
     setFavoriteTeam(team);
     setFavoriteTeamState(team);
+    saveFavoriteToBackend('favorite_team', team);
     addToast(`${team.name} set as your favourite team.`);
   }
 
