@@ -22,10 +22,10 @@ export function normalizeApiRace(apiRace, raceYear, fallbackRound) {
   if (!raceYear || !raceRound) return null;
 
   const qualifyingSession = pickQualifyingSession(apiRace?.schedule);
-  const qualifyingStart = parseUtc(
-    qualifyingSession?.date,
-    qualifyingSession?.time
-  );
+  const qualifyingStart = parseUtc(qualifyingSession?.date, qualifyingSession?.time);
+
+  const raceSession = apiRace?.schedule?.race ?? null;
+  const raceStart = parseUtc(raceSession?.date, raceSession?.time);
 
   return {
     id: null,
@@ -33,6 +33,7 @@ export function normalizeApiRace(apiRace, raceYear, fallbackRound) {
     race_round: raceRound,
     gp_name: apiRace?.raceName ?? apiRace?.name ?? apiRace?.gpName ?? null,
     qualifying_start_at: qualifyingStart ? qualifyingStart.toISOString() : null,
+    race_start_at: raceStart ? raceStart.toISOString() : null,
     source: 'schedule_api',
   };
 }

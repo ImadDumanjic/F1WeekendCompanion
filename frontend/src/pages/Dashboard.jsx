@@ -56,7 +56,7 @@ const Dashboard = () => {
   const [seasonOver, setSeasonOver] = useState(false);
   const [loading, setLoading]       = useState(true);
 
-  useEffect(() => { refreshUser(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { refreshUser(); }, []); 
 
   useEffect(() => {
     fetch("https://f1api.dev/api/2026")

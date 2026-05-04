@@ -6,6 +6,7 @@ import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
 import predictionsRouter from './routes/predictions.js';
 import racesRouter from './routes/races.js';
+import { startAutoScoring } from './autoScore.js';
 
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET environment variable is not set.');
@@ -41,6 +42,7 @@ const server = app.listen(port);
 
 server.on('listening', () => {
   console.log(`Backend listening on http://localhost:${port}`);
+  startAutoScoring();
 });
 
 server.on('error', (err) => {
