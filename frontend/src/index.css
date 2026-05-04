@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
 @theme inline {
@@ -36,7 +36,7 @@
   --color-cyber-blue: hsl(var(--cyber-blue));
   --color-velocity-red: hsl(var(--velocity-red));
   --color-podium-green: hsl(var(--podium-green));
-  --font-display: "Archivo Black", sans-serif;
+  --font-display: "Rajdhani", sans-serif;
   --font-body: "Inter", sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -88,6 +88,18 @@
     box-sizing: border-box;
   }
 
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6) inset !important;
+    -webkit-text-fill-color: white !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    caret-color: white;
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
   body {
     @apply bg-background text-foreground font-body antialiased;
     margin: 0;
@@ -96,6 +108,13 @@
     background-image:
       radial-gradient(circle at top, hsl(var(--primary) / 0.12), transparent 35%),
       linear-gradient(180deg, hsl(240 12% 6%) 0%, hsl(240 12% 4%) 100%);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
   }
 
   #root {
@@ -108,6 +127,26 @@
 }
 
 @layer utilities {
+  .auth-input {
+    appearance: none;
+    background-color: transparent !important;
+    color-scheme: dark;
+  }
+
+  .auth-input:focus,
+  .auth-input:focus-visible,
+  .auth-input:not(:placeholder-shown) {
+    background-color: transparent !important;
+  }
+
+  .auth-input:-webkit-autofill,
+  .auth-input:-webkit-autofill:hover,
+  .auth-input:-webkit-autofill:focus,
+  .auth-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6) inset !important;
+    -webkit-text-fill-color: white !important;
+  }
+
   .glass-card {
     @apply bg-card/60 backdrop-blur-xl border border-glass-border rounded-2xl;
   }

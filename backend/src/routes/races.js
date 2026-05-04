@@ -1,0 +1,107 @@
+import { Router } from 'express';
+import pool from '../db.js';
+import { loadRaceForPrediction, normalizeRaceKey, raceLockPayload } from '../predictionLock.js';
+import { applyScoring } from '../scoring.js';
+
+const router = Router();
+
+router.get('/prediction-status', async (req, res, next) => {
+  try {
+    const raceKey = normalizeRaceKey(req.query);
+    if (!raceKey.raceYear || !raceKey.raceRound) {
+      return res.status(400).json({ error: 'year and round are required' });
+    }
+
+    const race = await loadRaceForPrediction(raceKey);
+    if (!race) return res.status(404).json({ error: 'Race not found' });
+
+    res.json(raceLockPayload(race));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/:id/prediction-status', async (req, res, next) => {
+  try {
+    const raceId = Number(req.params.id);
+    if (!raceId) return res.status(400).json({ error: 'Valid race id is required' });
+
+    const race = await loadRaceForPrediction({ raceId });
+    if (!race) return res.status(404).json({ error: 'Race not found' });
+
+    res.json(raceLockPayload(race));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/results', async (req, res, next) => {
+  try {
+    const year  = Number(req.query.year);
+    const round = Number(req.query.round);
+    if (!year || !round) return res.status(400).json({ error: 'year and round are required' });
+
+    const { rows } = await pool.query(
+      'SELECT * FROM race_results WHERE race_year = $1 AND race_round = $2',
+      [year, round]
+    );
+    res.json(rows[0] ?? null);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/results', async (req, res, next) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (!adminKey || adminKey !== process.env.ADMIN_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  try {
+    const { race_year, race_round, p1, p2, p3, fastest_lap, safety_car_count } = req.body ?? {};
+
+    if (!race_year || !race_round || !p1 || !p2 || !p3) {
+      return res.status(400).json({ error: 'race_year, race_round, p1, p2, p3 are required' });
+    }
+
+    const { rows: [existing] } = await pool.query(
+      'SELECT id, scored_at FROM race_results WHERE race_year = $1 AND race_round = $2',
+      [race_year, race_round]
+    );
+    if (existing?.scored_at) {
+      return res.status(409).json({ error: 'Race already scored. Delete the result first to re-score.' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const { rows: [result] } = await client.query(
+        `INSERT INTO race_results (race_year, race_round, p1, p2, p3, fastest_lap, safety_car_count)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (race_year, race_round) DO UPDATE SET
+           p1 = EXCLUDED.p1, p2 = EXCLUDED.p2, p3 = EXCLUDED.p3,
+           fastest_lap = EXCLUDED.fastest_lap, safety_car_count = EXCLUDED.safety_car_count
+         RETURNING *`,
+        [race_year, race_round, p1, p2, p3, fastest_lap ?? null, safety_car_count ?? 0]
+      );
+
+      const scored = await applyScoring(client, race_year, race_round);
+
+      await client.query('UPDATE race_results SET scored_at = NOW() WHERE id = $1', [result.id]);
+
+      await client.query('COMMIT');
+      const { rows: [finalResult] } = await pool.query('SELECT * FROM race_results WHERE id = $1', [result.id]);
+      res.json({ scored, result: finalResult });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;
