@@ -6,6 +6,7 @@ import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
 import predictionsRouter from './routes/predictions.js';
 import racesRouter from './routes/races.js';
+import raceSummariesRouter from './routes/raceSummaries.js';
 import { startAutoScoring } from './autoScore.js';
 
 if (!process.env.JWT_SECRET) {
@@ -32,6 +33,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/predictions', predictionsRouter);
 app.use('/api/races', racesRouter);
+app.use('/api/race-summary', raceSummariesRouter);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
