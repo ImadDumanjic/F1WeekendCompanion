@@ -1,6 +1,5 @@
 import Groq from 'groq-sdk';
 
-const ERGAST_BASE = 'https://api.jolpi.ca/ergast/f1';
 
 const SYSTEM_PROMPT = `You are an enthusiastic F1 podcast host writing recaps for an F1 prediction app. Your voice is energetic, knowledgeable, and emotional — like Will Buxton on F1 TV. You love the sport and it shows. You write punchy, vivid recaps that capture both the facts and the feeling of a race.
 
@@ -35,7 +34,6 @@ async function safeFetch(url, timeoutMs = 8000) {
 }
 
 function buildUserPrompt(d) {
-  // Ergast returns "+5.123" for non-winners already, no need to prepend "+"
   const top10 = d.results.slice(0, 10).map((r, i) => {
     return `${i + 1}. ${r.driverName} (${r.team}) — ${r.displayTime}`;
   }).join('\n');
@@ -115,92 +113,113 @@ export async function generateRaceSummary(raceData) {
 }
 
 export async function fetchRaceData(year, round) {
-  const [resultsData, qualifyingData, driverStandingsData, constructorStandingsData] = await Promise.all([
-    safeFetch(`${ERGAST_BASE}/${year}/${round}/results.json`),
-    safeFetch(`${ERGAST_BASE}/${year}/${round}/qualifying.json`),
-    safeFetch(`${ERGAST_BASE}/${year}/${round}/driverStandings.json`),
-    safeFetch(`${ERGAST_BASE}/${year}/${round}/constructorStandings.json`),
+  // Primary sources: f1api.dev for race metadata/standings, OpenF1 for live session data
+  const [raceInfo, driversStandings, constructorsStandings] = await Promise.all([
+    safeFetch(`https://f1api.dev/api/${year}/${round}`),
+    safeFetch(`https://f1api.dev/api/${year}/drivers-championship`),
+    safeFetch(`https://f1api.dev/api/${year}/constructors-championship`),
   ]);
 
-  const race = resultsData?.MRData?.RaceTable?.Races?.[0];
-  if (!race?.Results?.length) return null;
+  // f1api.dev returns race as an array; fall back to object/root shape for safety
+  const race = Array.isArray(raceInfo?.race) ? raceInfo.race[0] : (raceInfo?.race ?? raceInfo);
+  if (!race?.winner?.name) return null; // Race hasn't finished yet
 
-  const results = race.Results;
+  const raceDate = race.schedule?.race?.date;
 
-  const top10 = results.slice(0, 10).map((r, i) => ({
-    driverName: `${r.Driver.givenName} ${r.Driver.familyName}`,
-    code: r.Driver.code,
-    team: r.Constructor.name,
-    // P1 gets race time, P2+ gets the gap string (already prefixed with "+")
-    displayTime: i === 0
-      ? (r.Time?.time ?? r.status)
-      : (r.Time?.time ?? r.status),
-  }));
+  // Find Race session on OpenF1 by date
+  const raceSessions = await safeFetch(
+    `https://api.openf1.org/v1/sessions?year=${year}&session_name=Race`,
+    6000
+  );
+  const raceSession = Array.isArray(raceSessions)
+    ? raceSessions.find((s) => s.date_start?.startsWith(raceDate))
+    : null;
 
-  const fastestLapEntry = results.find((r) => r.FastestLap?.rank === '1');
-  const fastestLapCode   = fastestLapEntry?.Driver?.code ?? null;
-  const fastestLapDriver = fastestLapEntry
-    ? `${fastestLapEntry.Driver.givenName} ${fastestLapEntry.Driver.familyName} (${fastestLapEntry.FastestLap.Time?.time ?? '?'})`
-    : 'N/A';
+  if (!raceSession?.session_key) return null;
 
-  const dnfs = results
-    .filter((r) => r.status !== 'Finished' && !r.status.startsWith('+') && !r.status.match(/Lap/i))
-    .map((r) => `${r.Driver.givenName} ${r.Driver.familyName} (${r.status})`);
+  const sessionKey = raceSession.session_key;
 
-  const qualRace = qualifyingData?.MRData?.RaceTable?.Races?.[0];
-  const poleEntry = qualRace?.QualifyingResults?.[0];
-  const pole = poleEntry
-    ? `${poleEntry.Driver.givenName} ${poleEntry.Driver.familyName} — ${poleEntry.Q3 ?? poleEntry.Q2 ?? poleEntry.Q1}`
-    : 'N/A';
+  // Sequential OpenF1 fetches to stay within rate limits (parallel → 429s)
+  const driversData   = await safeFetch(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`, 6000);
+  const positionsData = await safeFetch(`https://api.openf1.org/v1/position?session_key=${sessionKey}`, 8000);
+  const rcData        = await safeFetch(`https://api.openf1.org/v1/race_control?session_key=${sessionKey}`, 6000);
 
-  const dsList = driverStandingsData?.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings ?? [];
-  const csLst  = constructorStandingsData?.MRData?.StandingsTable?.StandingsLists?.[0]?.ConstructorStandings ?? [];
+  // Build driver map — normalize OpenF1 "Lando NORRIS" → "Lando Norris"
+  const driverMap = {};
+  if (Array.isArray(driversData)) {
+    for (const d of driversData) {
+      const normalizedName = d.full_name
+        ? d.full_name.split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+        : (d.name_acronym ?? `#${d.driver_number}`);
+      driverMap[d.driver_number] = { name: normalizedName, code: d.name_acronym, team: d.team_name };
+    }
+  }
 
-  const driversLeader      = dsList[0] ? `${dsList[0].Driver.givenName} ${dsList[0].Driver.familyName} with ${dsList[0].points} pts` : 'N/A';
-  const constructorsLeader = csLst[0]  ? `${csLst[0].Constructor.name} with ${csLst[0].points} pts` : 'N/A';
+  // Final position per driver (latest timestamp wins)
+  const finalPositions = {};
+  if (Array.isArray(positionsData)) {
+    for (const p of positionsData) {
+      const prev = finalPositions[p.driver_number];
+      if (!prev || p.date > prev.date) finalPositions[p.driver_number] = p;
+    }
+  }
+  const sortedDrivers = Object.values(finalPositions).sort((a, b) => a.position - b.position);
 
-  // OpenF1 enrichment (graceful degradation)
+  // Top 10
+  const top10 = sortedDrivers.slice(0, 10).map((p, i) => {
+    const driver = driverMap[p.driver_number] ?? { name: `Driver ${p.driver_number}`, code: 'UNK', team: 'Unknown' };
+    return { driverName: driver.name, code: driver.code, team: driver.team, displayTime: i === 0 ? 'Winner' : 'Finished' };
+  });
+
+  // Pole: driver at position 1 in the earliest position record (no extra API call)
+  let pole = 'N/A';
+  if (Array.isArray(positionsData) && positionsData.length > 0) {
+    const earliest = [...positionsData].sort((a, b) => a.date.localeCompare(b.date)).find((p) => p.position === 1);
+    if (earliest && driverMap[earliest.driver_number]) {
+      pole = driverMap[earliest.driver_number].name;
+    }
+  }
+
+  // Fastest lap — f1api.dev driver_id is lowercase surname (e.g. "norris")
+  const fastestLapDriverId   = race.fast_lap?.fast_lap_driver_id ?? null;
+  const fastestLapTime       = race.fast_lap?.fast_lap ?? null;
+  const fastestLapDriverInfo = fastestLapDriverId && Array.isArray(driversData)
+    ? driversData.find((d) => d.full_name?.split(' ').pop()?.toLowerCase() === fastestLapDriverId.toLowerCase())
+    : null;
+  const fastestLapCode = fastestLapDriverInfo?.name_acronym ?? null;
+  const fastestLap = fastestLapDriverInfo
+    ? `${driverMap[fastestLapDriverInfo.driver_number]?.name ?? fastestLapDriverId} (${fastestLapTime ?? '?'})`
+    : fastestLapTime ? `${fastestLapDriverId} (${fastestLapTime})` : 'N/A';
+
+  // Race control — SC / VSC / red flags
   let safetyCars = 0;
   let virtualSafetyCars = 0;
   let redFlags = 0;
-
-  try {
-    const sessionsData = await safeFetch(
-      `https://api.openf1.org/v1/sessions?year=${year}&session_name=Race`,
-      6000
-    );
-    if (Array.isArray(sessionsData)) {
-      const session = sessionsData.find((s) => s.date_start?.startsWith(race.date));
-      if (session?.session_key) {
-        const rcData = await safeFetch(
-          `https://api.openf1.org/v1/race_control?session_key=${session.session_key}`,
-          6000
-        );
-        if (Array.isArray(rcData)) {
-          // OpenF1: SafetyCar messages use category='SafetyCar' with null flag; text is in message field
-          safetyCars        = rcData.filter((m) => m.category === 'SafetyCar' && m.message === 'SAFETY CAR DEPLOYED').length;
-          virtualSafetyCars = rcData.filter((m) => m.category === 'SafetyCar' && typeof m.message === 'string' && m.message.startsWith('VIRTUAL SAFETY CAR') && m.message.includes('DEPLOYED')).length;
-          redFlags          = rcData.filter((m) => m.flag === 'RED').length;
-        }
-      }
-    }
-  } catch {
-    // OpenF1 unavailable — proceed with defaults
+  if (Array.isArray(rcData)) {
+    safetyCars        = rcData.filter((m) => m.category === 'SafetyCar' && m.message === 'SAFETY CAR DEPLOYED').length;
+    virtualSafetyCars = rcData.filter((m) => m.category === 'SafetyCar' && typeof m.message === 'string' && m.message.startsWith('VIRTUAL SAFETY CAR') && m.message.includes('DEPLOYED')).length;
+    redFlags          = rcData.filter((m) => m.flag === 'RED').length;
   }
 
+  // Championship standings
+  const dsList = driversStandings?.drivers_championship ?? [];
+  const csLst  = constructorsStandings?.constructors_championship ?? [];
+  const driversLeader      = dsList[0] ? `${dsList[0].driver?.name} ${dsList[0].driver?.surname} with ${dsList[0].points} pts` : 'N/A';
+  const constructorsLeader = csLst[0]  ? `${csLst[0].team?.teamName} with ${csLst[0].points} pts` : 'N/A';
+
   return {
-    raceName:            race.raceName,
-    round:               Number(race.round),
-    season:              Number(year),
-    circuitName:         race.Circuit?.circuitName ?? '',
-    city:                race.Circuit?.Location?.locality ?? '',
-    country:             race.Circuit?.Location?.country ?? '',
-    date:                race.date,
-    results:             top10,
+    raceName:         race.raceName,
+    round:            Number(round),
+    season:           Number(year),
+    circuitName:      race.circuit?.circuitName ?? '',
+    city:             race.circuit?.city ?? '',
+    country:          race.circuit?.country ?? '',
+    date:             raceDate ?? '',
+    results:          top10,
     pole,
-    fastestLap:          fastestLapDriver,
+    fastestLap,
     fastestLapCode,
-    dnfs,
+    dnfs:             [],
     safetyCars,
     virtualSafetyCars,
     redFlags,
