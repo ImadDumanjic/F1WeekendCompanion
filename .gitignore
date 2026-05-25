@@ -6,3 +6,5 @@ frontend/dist/
 .env
 .env.*
 !.env.example
+CLAUDE.md
+memory/

@@ -8,6 +8,7 @@ import predictionsRouter from './routes/predictions.js';
 import racesRouter from './routes/races.js';
 import raceSummariesRouter from './routes/raceSummaries.js';
 import badgesRouter from './routes/badges.js';
+import notificationsRouter from './routes/notifications.js';
 import { startAutoScoring } from './autoScore.js';
 
 if (!process.env.JWT_SECRET) {
@@ -36,6 +37,7 @@ app.use('/api/predictions', predictionsRouter);
 app.use('/api/races', racesRouter);
 app.use('/api/race-summary', raceSummariesRouter);
 app.use('/api/badges', badgesRouter);
+app.use('/api/notifications', notificationsRouter);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
