@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { clearFavorites, setFavoriteDriver, setFavoriteTeam } from '@/lib/favorites';
 
 const AuthContext = createContext(null);
@@ -62,6 +62,10 @@ export function AuthProvider({ children }) {
     storage.setItem('user', JSON.stringify(merged));
     setUser(merged);
   }
+
+  useEffect(() => {
+    if (token) refreshUser(token);
+  }, []);
 
   async function refreshUser(currentToken) {
     const t = currentToken ?? token;
