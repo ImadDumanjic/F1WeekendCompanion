@@ -1,23 +1,9 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Trophy, Target, User } from "lucide-react";
+import { Trophy, User, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
-const leaderboardData = [
-  { rank: 1, name: "SpeedDemon_42", points: 2840, accuracy: 78 },
-  { rank: 2, name: "TurboFan_UK", points: 2710, accuracy: 75 },
-  { rank: 3, name: "MonzaMaster", points: 2650, accuracy: 72 },
-  { rank: 4, name: "PitStop_Pro", points: 2400, accuracy: 70 },
-  { rank: 5, name: "ChequeredKing", points: 2280, accuracy: 69 },
-  { rank: 6, name: "ApexHunter", points: 2150, accuracy: 67 },
-  { rank: 7, name: "SlipstreamAce", points: 2020, accuracy: 65 },
-  { rank: 8, name: "GripLord", points: 1980, accuracy: 64 },
-  { rank: 9, name: "DownforceKid", points: 1870, accuracy: 62 },
-  { rank: 10, name: "RaceCraft_99", points: 1750, accuracy: 60 },
-  { rank: 11, name: "DRS_Zone", points: 1600, accuracy: 58 },
-  { rank: 12, name: "You", points: 1250, accuracy: 68, isUser: true },
-  { rank: 13, name: "PaddockVibes", points: 1180, accuracy: 55 },
-  { rank: 14, name: "UndercutKing", points: 1050, accuracy: 52 },
-  { rank: 15, name: "BoxBoxBox", points: 920, accuracy: 50 },
-];
+const API = "http://localhost:3001/api";
 
 const getRankStyle = (rank) => {
   if (rank === 1) return "text-yellow-400";
@@ -27,69 +13,149 @@ const getRankStyle = (rank) => {
 };
 
 const Leaderboard = () => {
+  const { token, user } = useAuth();
+  const [entries, setEntries]       = useState([]);
+  const [page, setPage]             = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal]           = useState(0);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetch(`${API}/users/leaderboard?page=${page}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+      })
+      .then((data) => {
+        const entries = Array.isArray(data) ? data : (data.entries ?? []);
+        setEntries(entries);
+        setTotalPages(data.totalPages ?? 1);
+        setTotal(data.total ?? entries.length);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Failed to load leaderboard.");
+        setLoading(false);
+      });
+  }, [token, page]);
+
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="mb-2 font-display text-3xl sm:text-4xl">
-            LEADERBOARD
-          </h1>
-          <p className="mb-8 text-muted-foreground">Season 2026 Rankings</p>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h1 className="mb-2 font-display text-3xl sm:text-4xl">LEADERBOARD</h1>
+        <p className="mb-8 text-muted-foreground">
+          Season 2026 Rankings{total > 0 && ` · ${total.toLocaleString()} competitors`}
+        </p>
 
+        {loading && (
           <div className="space-y-3">
-            {leaderboardData.map((entry, index) => (
-              <motion.div
-                key={entry.rank}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.04 }}
-                className={`glass-card flex items-center gap-4 p-4 sm:p-5 hover-lift ${
-                  entry.isUser ? "border-l-4 border-l-primary glow-red" : ""
-                }`}
-              >
-                <span
-                  className={`w-10 text-center font-display text-xl sm:text-2xl ${getRankStyle(
-                    entry.rank,
-                  )}`}
-                >
-                  {entry.rank <= 3
-                    ? ["🥇", "🥈", "🥉"][entry.rank - 1]
-                    : `#${entry.rank}`}
-                </span>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                  <User className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div
-                    className={`truncate font-semibold ${
-                      entry.isUser ? "text-primary" : ""
-                    }`}
-                  >
-                    {entry.name}{" "}
-                    {entry.isUser && (
-                      <span className="text-xs text-muted-foreground">
-                        (You)
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-right">
-                  <div className="hidden items-center gap-1 text-sm text-muted-foreground sm:flex">
-                    <Target className="h-4 w-4" />
-                    {entry.accuracy}%
-                  </div>
-                  <div className="flex items-center gap-1 font-display text-sm">
-                    <Trophy className="h-4 w-4 text-podium-green" />
-                    {entry.points.toLocaleString()}
-                  </div>
-                </div>
-              </motion.div>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="glass-card h-16 animate-pulse"
+                style={{ animationDelay: `${i * 50}ms` }}
+              />
             ))}
           </div>
-        </motion.div>
+        )}
+
+        {error && (
+          <div className="glass-card flex items-center gap-3 p-6 text-destructive">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <span className="text-sm">{error}</span>
+          </div>
+        )}
+
+        {!loading && !error && entries.length === 0 && (
+          <div className="glass-card p-10 text-center">
+            <Trophy className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+            <p className="text-muted-foreground">No entries yet. Be the first to make a prediction!</p>
+          </div>
+        )}
+
+        {!loading && !error && entries.length > 0 && (
+          <>
+            <div className="space-y-3 mb-6">
+              {entries.map((entry, index) => {
+                const rank   = Number(entry.rank);
+                const isUser = user && entry.id === user.id;
+                return (
+                  <motion.div
+                    key={entry.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.04 }}
+                    className={`glass-card flex items-center gap-4 p-4 sm:p-5 hover-lift ${
+                      isUser ? "border-l-4 border-l-primary glow-red" : ""
+                    }`}
+                  >
+                    <span
+                      className={`w-10 text-center font-display text-xl sm:text-2xl ${getRankStyle(rank)}`}
+                    >
+                      {rank <= 3 ? ["🥇", "🥈", "🥉"][rank - 1] : `#${rank}`}
+                    </span>
+
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                      <User className="h-5 w-5 text-muted-foreground" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className={`truncate font-semibold ${isUser ? "text-primary" : ""}`}>
+                        {entry.username}
+                        {isUser && (
+                          <span className="ml-2 text-xs text-muted-foreground">(You)</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 font-display text-sm">
+                      <Trophy className="h-4 w-4 text-podium-green" />
+                      {Number(entry.score).toLocaleString()}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => p - 1)}
+                  disabled={page === 1}
+                  className="flex items-center gap-1 rounded-xl px-4 py-2 text-sm font-semibold glass-card hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Prev
+                </button>
+
+                <span className="font-display text-sm text-muted-foreground">
+                  {page} / {totalPages}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page === totalPages}
+                  className="flex items-center gap-1 rounded-xl px-4 py-2 text-sm font-semibold glass-card hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </motion.div>
     </div>
   );
 };

@@ -16,6 +16,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { getFavoriteDriver, getFavoriteTeam } from '@/lib/favorites';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const API = 'http://localhost:3001/api';
 
@@ -132,16 +133,17 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [badges, setBadges] = useState([]);
 
   useEffect(() => {
     setFavoriteDriver(getFavoriteDriver());
     setFavoriteTeam(getFavoriteTeam());
 
-    fetch(`${API}/users/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(res => res.json())
-      .then(data => {
+    Promise.all([
+      fetch(`${API}/users/me`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+      fetch(`${API}/badges/me`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+    ])
+      .then(([data, badgeData]) => {
         const values = {
           username: data.username ?? '',
           name: data.name ?? '',
@@ -154,6 +156,7 @@ const Profile = () => {
         setUsername(values.username);
         setName(values.name);
         setEmail(values.email);
+        if (Array.isArray(badgeData)) setBadges(badgeData);
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
@@ -265,6 +268,7 @@ const Profile = () => {
             <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </Panel>
         ) : (
+          <>
           <form onSubmit={handleSave} className="grid gap-5 lg:grid-cols-[0.85fr_1.25fr]">
             <div className="flex flex-col gap-4">
               <Panel className="p-4 sm:p-5">
@@ -397,10 +401,63 @@ const Profile = () => {
               </div>
             </Panel>
           </form>
+
+          {badges.length > 0 && (
+            <Panel className="mt-5 p-4 sm:p-5">
+              <h2 className="mb-4 font-display text-sm font-bold uppercase tracking-[0.24em] text-muted-foreground">
+                Badges
+              </h2>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                {badges.map((badge, i) => (
+                  <BadgeCard key={badge.slug} badge={badge} index={i} />
+                ))}
+              </div>
+            </Panel>
+          )}
+          </>
         )}
       </motion.div>
     </div>
   );
 };
+
+function BadgeCard({ badge, index }) {
+  const earned = badge.earned;
+  const awardedAt = badge.awarded_at
+    ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(badge.awarded_at))
+    : null;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.06 }}
+          className={[
+            'flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-all select-none cursor-default',
+            earned
+              ? 'border-primary/40 bg-primary/5 shadow-[0_0_18px_rgba(225,6,0,0.12)]'
+              : 'border-glass-border bg-muted/20 opacity-40 grayscale',
+          ].join(' ')}
+        >
+          <span className="text-3xl leading-none">{badge.icon}</span>
+          <p className={`font-display text-xs font-bold uppercase tracking-wide leading-tight ${earned ? 'text-foreground' : 'text-muted-foreground'}`}>
+            {badge.name}
+          </p>
+          {earned && (
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 font-display text-[0.55rem] font-bold uppercase tracking-widest text-primary">
+              Earned
+            </span>
+          )}
+        </motion.div>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-[200px] text-center">
+        <p>{badge.description}</p>
+        {awardedAt && <p className="mt-1 opacity-70">{awardedAt}</p>}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 export default Profile;

@@ -104,4 +104,40 @@ router.patch('/me', requireAuth, async (req, res, next) => {
   }
 });
 
+const PAGE_SIZE = 20;
+
+router.get('/leaderboard', requireAuth, async (req, res, next) => {
+  try {
+    const page   = Math.max(1, parseInt(req.query.page) || 1);
+    const offset = (page - 1) * PAGE_SIZE;
+
+    const [{ rows }, { rows: countRows }] = await Promise.all([
+      pool.query(
+        `SELECT
+           id,
+           username,
+           score,
+           ROW_NUMBER() OVER (ORDER BY score DESC, id ASC) AS rank
+         FROM users
+         ORDER BY score DESC, id ASC
+         LIMIT $1 OFFSET $2`,
+        [PAGE_SIZE, offset]
+      ),
+      pool.query('SELECT COUNT(*) FROM users'),
+    ]);
+
+    const total = parseInt(countRows[0].count);
+
+    res.json({
+      entries:  rows,
+      page,
+      pageSize: PAGE_SIZE,
+      total,
+      totalPages: Math.ceil(total / PAGE_SIZE),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

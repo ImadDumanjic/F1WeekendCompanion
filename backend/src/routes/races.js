@@ -2,6 +2,7 @@ import { Router } from 'express';
 import pool from '../db.js';
 import { loadRaceForPrediction, normalizeRaceKey, raceLockPayload } from '../predictionLock.js';
 import { applyScoring } from '../scoring.js';
+import { fetchRaceData } from '../groqClient.js';
 
 const router = Router();
 
@@ -45,7 +46,46 @@ router.get('/results', async (req, res, next) => {
       'SELECT * FROM race_results WHERE race_year = $1 AND race_round = $2',
       [year, round]
     );
-    res.json(rows[0] ?? null);
+    if (rows[0]) return res.json(rows[0]);
+
+    const raceData = await fetchRaceData(year, round);
+    if (!raceData) return res.json(null);
+
+    const p1            = raceData.results[0]?.code ?? null;
+    const p2            = raceData.results[1]?.code ?? null;
+    const p3            = raceData.results[2]?.code ?? null;
+    const fastest_lap   = raceData.fastestLapCode ?? null;
+    const safety_car_count = raceData.safetyCars ?? 0;
+
+    if (!p1 || !p2 || !p3) return res.json({ p1, p2, p3, fastest_lap, safety_car_count });
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const { rows: [saved] } = await client.query(
+        `INSERT INTO race_results (race_year, race_round, p1, p2, p3, fastest_lap, safety_car_count)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (race_year, race_round) DO NOTHING
+         RETURNING *`,
+        [year, round, p1, p2, p3, fastest_lap, safety_car_count]
+      );
+      if (saved) {
+        await applyScoring(client, year, round);
+        await client.query('UPDATE race_results SET scored_at = NOW() WHERE id = $1', [saved.id]);
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+
+    const { rows: [final] } = await pool.query(
+      'SELECT * FROM race_results WHERE race_year = $1 AND race_round = $2',
+      [year, round]
+    );
+    res.json(final ?? { p1, p2, p3, fastest_lap, safety_car_count });
   } catch (err) {
     next(err);
   }
