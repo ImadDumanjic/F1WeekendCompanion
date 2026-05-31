@@ -18,7 +18,7 @@ import { useToast } from '@/context/ToastContext';
 import { getFavoriteDriver, getFavoriteTeam } from '@/lib/favorites';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-const API = 'http://localhost:3001/api';
+const API = `${import.meta.env.VITE_API_URL}/api`;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

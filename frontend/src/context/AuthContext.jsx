@@ -3,7 +3,7 @@ import { clearFavorites, setFavoriteDriver, setFavoriteTeam } from '@/lib/favori
 
 const AuthContext = createContext(null);
 
-const API = 'http://localhost:3001/api';
+const API = `${import.meta.env.VITE_API_URL}/api`;
 
 function getStoredAuthItem(key) {
   return localStorage.getItem(key) ?? sessionStorage.getItem(key);

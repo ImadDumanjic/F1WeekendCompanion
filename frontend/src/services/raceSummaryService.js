@@ -1,4 +1,4 @@
-const API = 'http://localhost:3001/api';
+const API = `${import.meta.env.VITE_API_URL}/api`;
 
 function getToken() {
   return localStorage.getItem('token') ?? sessionStorage.getItem('token');

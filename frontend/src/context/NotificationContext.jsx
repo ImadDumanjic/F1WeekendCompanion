@@ -3,7 +3,7 @@ import { useAuth } from "./AuthContext";
 
 const NotificationContext = createContext(null);
 
-const API = "http://localhost:3001/api";
+const API = `${import.meta.env.VITE_API_URL}/api`;
 const POLL_MS = 5 * 60 * 1000;
 
 export function NotificationProvider({ children }) {

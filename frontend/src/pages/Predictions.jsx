@@ -10,7 +10,7 @@ import { useToast } from "@/context/ToastContext";
 import { getCurrentDriverStandings } from "@/services/f1ApiService";
 import { getRaceDateTime } from "@/lib/f1-data";
 
-const API = "http://localhost:3001/api";
+const API = `${import.meta.env.VITE_API_URL}/api`;
 const RACE_YEAR = 2026;
 
 const SC_OPTIONS = [

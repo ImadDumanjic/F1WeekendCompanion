@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Trophy, User, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
-const API = "http://localhost:3001/api";
+const API = `${import.meta.env.VITE_API_URL}/api`;
 
 const getRankStyle = (rank) => {
   if (rank === 1) return "text-yellow-400";
