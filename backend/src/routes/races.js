@@ -3,6 +3,7 @@ import pool from '../db.js';
 import { loadRaceForPrediction, normalizeRaceKey, raceLockPayload } from '../predictionLock.js';
 import { applyScoring } from '../scoring.js';
 import { fetchRaceData } from '../groqClient.js';
+import { fetchRaceResults } from '../ergastResults.js';
 
 const router = Router();
 
@@ -49,15 +50,21 @@ router.get('/results', async (req, res, next) => {
     if (rows[0]) return res.json(rows[0]);
 
     const raceData = await fetchRaceData(year, round);
-    if (!raceData) return res.json(null);
 
-    const p1            = raceData.results[0]?.code ?? null;
-    const p2            = raceData.results[1]?.code ?? null;
-    const p3            = raceData.results[2]?.code ?? null;
-    const fastest_lap   = raceData.fastestLapCode ?? null;
-    const safety_car_count = raceData.safetyCars ?? 0;
+    let p1            = raceData?.results[0]?.code ?? null;
+    let p2            = raceData?.results[1]?.code ?? null;
+    let p3            = raceData?.results[2]?.code ?? null;
+    let fastest_lap   = raceData?.fastestLapCode ?? null;
+    const safety_car_count = raceData?.safetyCars ?? 0;
 
-    if (!p1 || !p2 || !p3) return res.json({ p1, p2, p3, fastest_lap, safety_car_count });
+    if (!p1 || !p2 || !p3) {
+      const ergast = await fetchRaceResults(year, round);
+      if (!ergast) return res.json(raceData ? { p1, p2, p3, fastest_lap, safety_car_count } : null);
+      p1          = ergast.p1;
+      p2          = ergast.p2;
+      p3          = ergast.p3;
+      fastest_lap = ergast.fastest_lap ?? fastest_lap;
+    }
 
     const client = await pool.connect();
     try {
