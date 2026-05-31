@@ -153,4 +153,69 @@ router.post('/results', async (req, res, next) => {
   }
 });
 
+router.post('/rescore', async (req, res, next) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (!adminKey || adminKey !== process.env.ADMIN_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  try {
+    const { race_year, race_round, safety_car_count } = req.body ?? {};
+    if (!race_year || !race_round) {
+      return res.status(400).json({ error: 'race_year and race_round are required' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      if (safety_car_count != null) {
+        await client.query(
+          'UPDATE race_results SET safety_car_count = $1 WHERE race_year = $2 AND race_round = $3',
+          [safety_car_count, race_year, race_round]
+        );
+      }
+
+      const { rows: [result] } = await client.query(
+        'SELECT * FROM race_results WHERE race_year = $1 AND race_round = $2',
+        [race_year, race_round]
+      );
+      if (!result) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Race result not found' });
+      }
+
+      const { rows: predictions } = await client.query(
+        'SELECT * FROM predictions WHERE race_year = $1 AND race_round = $2 AND is_locked = TRUE',
+        [race_year, race_round]
+      );
+
+      const { calculatePoints } = await import('../scoring.js');
+      let rescored = 0;
+      for (const pred of predictions) {
+        const oldPts = pred.points_earned ?? 0;
+        const newPts = calculatePoints(pred, result);
+        const delta  = newPts - oldPts;
+        await client.query('UPDATE predictions SET points_earned = $1 WHERE id = $2', [newPts, pred.id]);
+        if (delta !== 0) {
+          await client.query('UPDATE users SET score = score + $1 WHERE id = $2', [delta, pred.user_id]);
+        }
+        rescored++;
+      }
+
+      await client.query('UPDATE race_results SET scored_at = NOW() WHERE id = $1', [result.id]);
+      await client.query('COMMIT');
+
+      res.json({ rescored, safety_car_count: result.safety_car_count });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
