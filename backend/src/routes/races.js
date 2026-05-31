@@ -50,6 +50,7 @@ router.get('/results', async (req, res, next) => {
     if (rows[0]) return res.json(rows[0]);
 
     const raceData = await fetchRaceData(year, round);
+    console.log(`[results] ${year}/${round} fetchRaceData:`, raceData ? `p1=${raceData.results[0]?.code} p2=${raceData.results[1]?.code} p3=${raceData.results[2]?.code}` : 'null');
 
     let p1            = raceData?.results[0]?.code ?? null;
     let p2            = raceData?.results[1]?.code ?? null;
@@ -59,6 +60,7 @@ router.get('/results', async (req, res, next) => {
 
     if (!p1 || !p2 || !p3) {
       const ergast = await fetchRaceResults(year, round);
+      console.log(`[results] ${year}/${round} ergast fallback:`, ergast ? `p1=${ergast.p1} p2=${ergast.p2} p3=${ergast.p3}` : 'null');
       if (!ergast) return res.json(raceData ? { p1, p2, p3, fastest_lap, safety_car_count } : null);
       p1          = ergast.p1;
       p2          = ergast.p2;
