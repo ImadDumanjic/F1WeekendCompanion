@@ -1,5 +1,7 @@
 # F1 Weekend Companion
 
+**Link for the deployed application: https://f1-weekend-companion-frontend.vercel.app/**
+
 F1 Weekend Companion is a Formula 1 second-screen app focused on race weekend experiences, predictions, live context, and social competition.
 
 ## Overview
